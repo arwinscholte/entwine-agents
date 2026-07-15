@@ -1,8 +1,9 @@
 name: Release
 
 # Tag-driven publish: push a v* tag (matching the Version in src/Directory.Build.props) to pack and publish
-# all packages. Publishes to nuget.org when the NUGET_API_KEY repository secret is set, and always to
-# GitHub Packages (GITHUB_TOKEN).
+# all packages. nuget.org uses Trusted Publishing (OIDC — no stored API key): the repo must be registered
+# as a trusted publisher on nuget.org (repository arwinscholte/entwine-agents, workflow release.yml).
+# GitHub Packages is published with the built-in GITHUB_TOKEN.
 on:
   push:
     tags: ['v*']
@@ -10,6 +11,7 @@ on:
 permissions:
   contents: read
   packages: write
+  id-token: write   # OIDC for nuget.org Trusted Publishing
 
 jobs:
   publish:
@@ -28,16 +30,16 @@ jobs:
       - name: Pack
         run: dotnet pack entwine-agents.slnx --configuration Release --no-build -o artifacts
 
-      - name: Push to nuget.org (when NUGET_API_KEY is configured)
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      - name: NuGet login (Trusted Publishing)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: arwinscholte   # nuget.org username owning the trusted-publishing policy
+
+      - name: Push to nuget.org
         run: |
-          if [ -z "$NUGET_API_KEY" ]; then
-            echo "NUGET_API_KEY secret not set — skipping nuget.org publish."
-          else
-            dotnet nuget push "artifacts/*.nupkg" --api-key "$NUGET_API_KEY" \
-              --source https://api.nuget.org/v3/index.json --skip-duplicate
-          fi
+          dotnet nuget push "artifacts/*.nupkg" --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       - name: Push to GitHub Packages
         run: |
