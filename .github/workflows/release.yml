@@ -34,7 +34,7 @@ jobs:
         id: nuget-login
         uses: NuGet/login@v1
         with:
-          user: arwinscholte   # nuget.org username owning the trusted-publishing policy
+          user: arwin.scholte   # nuget.org username owning the trusted-publishing policy
 
       - name: Push to nuget.org
         run: |
