@@ -1,0 +1,45 @@
+name: Release
+
+# Tag-driven publish: push a v* tag (matching the Version in src/Directory.Build.props) to pack and publish
+# all packages. Publishes to nuget.org when the NUGET_API_KEY repository secret is set, and always to
+# GitHub Packages (GITHUB_TOKEN).
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build & test
+        run: |
+          dotnet build entwine-agents.slnx --configuration Release
+          dotnet test entwine-agents.slnx --configuration Release --no-build
+
+      - name: Pack
+        run: dotnet pack entwine-agents.slnx --configuration Release --no-build -o artifacts
+
+      - name: Push to nuget.org (when NUGET_API_KEY is configured)
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [ -z "$NUGET_API_KEY" ]; then
+            echo "NUGET_API_KEY secret not set — skipping nuget.org publish."
+          else
+            dotnet nuget push "artifacts/*.nupkg" --api-key "$NUGET_API_KEY" \
+              --source https://api.nuget.org/v3/index.json --skip-duplicate
+          fi
+
+      - name: Push to GitHub Packages
+        run: |
+          dotnet nuget push "artifacts/*.nupkg" --api-key "${{ secrets.GITHUB_TOKEN }}" \
+            --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --skip-duplicate

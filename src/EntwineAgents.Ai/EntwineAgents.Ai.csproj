@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>EntwineAgents.Ai</RootNamespace>
+    <Description>Provider-agnostic LLM seam for .NET agents: IChatProvider with OpenAI-compatible and Anthropic-native providers and a routing registry.</Description>
   </PropertyGroup>
 
   <!--

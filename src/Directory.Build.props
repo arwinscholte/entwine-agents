@@ -1,0 +1,25 @@
+<Project>
+
+  <!-- Shared NuGet metadata for every package under src/. Version is bumped here (one line) per release;
+       the release workflow packs and publishes on v* tags. -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Authors>Arwin Scholte</Authors>
+    <Company>Entwine</Company>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/arwinscholte/entwine-agents</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/arwinscholte/entwine-agents</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>llm;agents;ai;openai;anthropic;prompts;dotnet</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+</Project>

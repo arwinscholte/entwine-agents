@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>EntwineAgents.Tokenisation</RootNamespace>
+    <Description>Pseudonymisation with a separated key (GDPR Art. 4(5)): deterministic cross-run-stable tokens with an AES-GCM encrypted, tenant-scoped key store.</Description>
   </PropertyGroup>
 
   <!--

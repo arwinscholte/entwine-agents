@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>EntwineAgents.Intake</RootNamespace>
+    <Description>Intake utilities for .NET agents: tolerant XLSX/CSV/OCR-text table reading, date normalisation, and session-local pseudonymisation (PseudonymMap).</Description>
   </PropertyGroup>
 
   <!--
