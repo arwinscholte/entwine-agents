@@ -1,5 +1,8 @@
 # EntwineAgents
 
+[![CI](https://github.com/arwinscholte/entwine-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/arwinscholte/entwine-agents/actions/workflows/ci.yml)
+[![NuGet](https://img.shields.io/nuget/v/EntwineAgents.Runtime?label=nuget)](https://www.nuget.org/packages/EntwineAgents.Runtime)
+
 A lean, composable **agent runtime for .NET** — the shared substrate for building LLM agents that behave like
 software components: typed inputs and outputs, prompts managed as data, privacy by construction, and graceful
 degradation everywhere.
