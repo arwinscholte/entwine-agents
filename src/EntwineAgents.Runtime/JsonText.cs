@@ -8,16 +8,25 @@ namespace EntwineAgents.Runtime;
 /// </summary>
 public static class JsonText
 {
-    /// <summary>Strip a leading/trailing Markdown code fence (any language tag) if present; otherwise return trimmed input.</summary>
+    /// <summary>
+    /// Return the content of the first Markdown code fence (any language tag) if the input contains one —
+    /// including when the model prefixes prose ("Here is the JSON: ```json …") — otherwise the trimmed input.
+    /// </summary>
     public static string Unfence(string? raw)
     {
         if (string.IsNullOrWhiteSpace(raw)) return raw ?? string.Empty;
         var s = raw.Trim();
-        if (!s.StartsWith("```")) return s;
 
-        var firstNewline = s.IndexOf('\n');
-        s = firstNewline >= 0 ? s[(firstNewline + 1)..] : s[3..];   // drop the opening ``` / ```json line
-        if (s.EndsWith("```")) s = s[..^3];
-        return s.Trim();
+        var open = s.IndexOf("```", StringComparison.Ordinal);
+        if (open < 0) return s;   // no fence anywhere — pass through
+
+        // Content starts after the opening fence's line (skips a language tag like ```json); for a
+        // single-line fence there is no newline, so it starts right after the backticks.
+        var newline = s.IndexOf('\n', open);
+        var contentStart = newline < 0 ? open + 3 : newline + 1;
+
+        var close = s.IndexOf("```", contentStart, StringComparison.Ordinal);
+        var content = close < 0 ? s[contentStart..] : s[contentStart..close];
+        return content.Trim();
     }
 }

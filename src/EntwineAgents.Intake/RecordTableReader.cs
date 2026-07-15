@@ -91,8 +91,24 @@ public static class RecordTableReader
         var raw = new List<IReadOnlyList<string>>();
         string? line;
         while ((line = reader.ReadLine()) is not null)
-            raw.Add(SplitCsv(line));
+        {
+            // A quoted field may legally contain newlines (common in exported description columns):
+            // while the record has an unbalanced quote, the line break was inside a field — keep
+            // appending lines until quotes balance, then split the whole record.
+            var record = new System.Text.StringBuilder(line);
+            while (CountQuotes(record) % 2 == 1 && reader.ReadLine() is { } continuation)
+                record.Append('\n').Append(continuation);
+            raw.Add(SplitCsv(record.ToString()));
+        }
         return FromRawRows(raw);
+    }
+
+    private static int CountQuotes(System.Text.StringBuilder record)
+    {
+        var n = 0;
+        for (var i = 0; i < record.Length; i++)
+            if (record[i] == '"') n++;
+        return n;
     }
 
     private static Table FromRawRows(List<IReadOnlyList<string>> raw)
