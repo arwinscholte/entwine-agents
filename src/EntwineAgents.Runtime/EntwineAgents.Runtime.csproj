@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>EntwineAgents.Runtime</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    The agent runtime: single-turn (Agent<TInput,TResult>) and batched (BatchAgent<TItem,TResult>)
+    shells over one primitive - fetch a prompt by key, run a turn, degrade gracefully, parse to a typed
+    result - plus the IAgentChat/IPromptSource ports and the ChatProviderAgentChat bridge to the provider seam.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\EntwineAgents.Ai\EntwineAgents.Ai.csproj" />
+  </ItemGroup>
+
+  <!-- #5 (batched shell): ILogger for BatchAgent retry/degrade diagnostics. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
+  </ItemGroup>
+
+</Project>

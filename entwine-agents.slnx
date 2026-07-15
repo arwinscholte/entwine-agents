@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/QuickStart/QuickStart.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/EntwineAgents.Ai/EntwineAgents.Ai.csproj" />
+    <Project Path="src/EntwineAgents.Intake/EntwineAgents.Intake.csproj" />
+    <Project Path="src/EntwineAgents.Ocr/EntwineAgents.Ocr.csproj" />
+    <Project Path="src/EntwineAgents.Prompts/EntwineAgents.Prompts.csproj" />
+    <Project Path="src/EntwineAgents.Runtime/EntwineAgents.Runtime.csproj" />
+    <Project Path="src/EntwineAgents.Tokenisation/EntwineAgents.Tokenisation.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EntwineAgents.AiTest/EntwineAgents.AiTest.csproj" />
+    <Project Path="tests/EntwineAgents.IntakeTest/EntwineAgents.IntakeTest.csproj" />
+    <Project Path="tests/EntwineAgents.PromptsTest/EntwineAgents.PromptsTest.csproj" />
+    <Project Path="tests/EntwineAgents.RuntimeTest/EntwineAgents.RuntimeTest.csproj" />
+    <Project Path="tests/EntwineAgents.TokenisationTest/EntwineAgents.TokenisationTest.csproj" />
+  </Folder>
+</Solution>

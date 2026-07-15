@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>EntwineAgents.Prompts</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    Prompt management: versioned templates with per-client override and a cached client-to-global
+    fallback read path. Persistence is a port (IPromptRepository); post-save behaviour is a port
+    (IPromptSavedHook); HttpPromptSource binds satellite hosts over a prompt-egress endpoint, failing
+    open to built-in fallbacks.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.7" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EntwineAgents.Runtime\EntwineAgents.Runtime.csproj" />
+  </ItemGroup>
+
+</Project>
