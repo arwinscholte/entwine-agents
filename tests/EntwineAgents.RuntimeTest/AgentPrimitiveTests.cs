@@ -19,6 +19,18 @@ public class JsonTextTests
 
     [Fact]
     public void Empty_stays_empty() => JsonText.Unfence("   ").Should().Be("   ");
+
+    [Fact]
+    public void Prose_before_the_fence_still_yields_the_fenced_json()   // issue #2
+        => JsonText.Unfence("Here is the JSON you asked for:\n```json\n{\"a\":1}\n```").Should().Be("{\"a\":1}");
+
+    [Fact]
+    public void Prose_with_a_bare_fence_works_too()
+        => JsonText.Unfence("Sure!\n```\n{\"a\":1}\n```\nHope that helps.").Should().Be("{\"a\":1}");
+
+    [Fact]
+    public void An_unterminated_fence_after_prose_takes_the_rest()
+        => JsonText.Unfence("Result:\n```json\n{\"a\":1}").Should().Be("{\"a\":1}");
 }
 
 public class AgentPrimitiveTests
