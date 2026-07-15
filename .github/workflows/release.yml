@@ -28,7 +28,7 @@ jobs:
           dotnet test entwine-agents.slnx --configuration Release --no-build
 
       - name: Pack
-        run: dotnet pack entwine-agents.slnx --configuration Release --no-build -o artifacts
+        run: dotnet pack entwine-agents.slnx --configuration Release --no-build -o artifacts -p:ContinuousIntegrationBuild=true
 
       - name: NuGet login (Trusted Publishing)
         id: nuget-login

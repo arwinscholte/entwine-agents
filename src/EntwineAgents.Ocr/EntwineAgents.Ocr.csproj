@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>EntwineAgents.Ocr</RootNamespace>
     <Description>Document OCR behind a port: IDocumentOcr with an Azure Document Intelligence implementation - structured text, tables as markdown, per-page spatial data.</Description>
+    <PackageTags>ocr;azure;document-intelligence;pdf;document-processing;dotnet</PackageTags>
   </PropertyGroup>
 
   <!--

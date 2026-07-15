@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>EntwineAgents.Runtime</RootNamespace>
     <Description>Typed agent shells for .NET: Agent&lt;TInput,TResult&gt; and BatchAgent&lt;TItem,TResult&gt; over one primitive - prompt by key, one turn, typed degrade, typed parse.</Description>
+    <PackageTags>llm;agents;ai;agent-framework;prompts;dotnet</PackageTags>
   </PropertyGroup>
 
   <!--

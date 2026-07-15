@@ -1,25 +1,30 @@
 <Project>
 
   <!-- Shared NuGet metadata for every package under src/. Version is bumped here (one line) per release;
-       the release workflow packs and publishes on v* tags. -->
+       the release workflow packs and publishes on v* tags. Each package ships its OWN README.md (the file
+       in its project folder) so every nuget.org listing page describes that package, not the whole repo. -->
   <PropertyGroup>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Authors>Arwin Scholte</Authors>
     <Company>Entwine</Company>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/arwinscholte/entwine-agents</PackageProjectUrl>
     <RepositoryUrl>https://github.com/arwinscholte/entwine-agents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>llm;agents;ai;openai;anthropic;prompts;dotnet</PackageTags>
+    <PackageTags>llm;agents;ai;dotnet</PackageTags>
+    <PackageReleaseNotes>https://github.com/arwinscholte/entwine-agents/releases</PackageReleaseNotes>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../icon.png" Pack="true" PackagePath="/" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
 </Project>

@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>EntwineAgents.Prompts</RootNamespace>
     <Description>Prompt management for .NET agents: versioned templates, per-client override, cached fallback reads, persistence behind a port, and an HTTP egress source for database-free hosts.</Description>
+    <PackageTags>llm;prompts;prompt-management;versioning;agents;dotnet</PackageTags>
   </PropertyGroup>
 
   <!--
