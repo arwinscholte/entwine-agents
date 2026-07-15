@@ -4,7 +4,7 @@
        the release workflow packs and publishes on v* tags. Each package ships its OWN README.md (the file
        in its project folder) so every nuget.org listing page describes that package, not the whole repo. -->
   <PropertyGroup>
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
     <Authors>Arwin Scholte</Authors>
     <Company>Entwine</Company>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
