@@ -23,11 +23,14 @@ public sealed class AnthropicChatProvider : IChatProvider
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly AnthropicOptions _options;
+    private readonly ICredentialStore? _credentialStore;
 
-    public AnthropicChatProvider(IHttpClientFactory httpClientFactory, IOptions<AnthropicOptions> options)
+    /// <param name="credentialStore">Optional (ENT-352) — see <see cref="OpenAiCompatibleChatProvider"/>.</param>
+    public AnthropicChatProvider(IHttpClientFactory httpClientFactory, IOptions<AnthropicOptions> options, ICredentialStore? credentialStore = null)
     {
         _httpClientFactory = httpClientFactory;
         _options = options.Value;
+        _credentialStore = credentialStore;
     }
 
     public string Name => "Anthropic";
@@ -36,9 +39,12 @@ public sealed class AnthropicChatProvider : IChatProvider
     {
         var client = _httpClientFactory.CreateClient("Anthropic");
 
+        // ENT-352: per-client BYOK — the client's own Anthropic key/endpoint/model when configured, else platform.
+        var cred = await OpenAiCompatibleChatProvider.ResolveClientCredentialAsync(_credentialStore, request.ClientId, ProviderKey, cancellationToken);
+
         var body = new Dictionary<string, object>
         {
-            ["model"] = request.Model ?? _options.ModelId,
+            ["model"] = request.Model ?? cred?.ModelId ?? _options.ModelId,
             ["max_tokens"] = request.MaxTokens ?? _options.DefaultMaxTokens,
             ["messages"] = new[] { new { role = "user", content = request.UserPrompt } },
             ["temperature"] = request.Temperature,
@@ -46,7 +52,15 @@ public sealed class AnthropicChatProvider : IChatProvider
         if (!string.IsNullOrEmpty(request.SystemPrompt))
             body["system"] = request.SystemPrompt;
 
-        var response = await client.PostAsJsonAsync("v1/messages", body, cancellationToken);
+        var requestUri = string.IsNullOrWhiteSpace(cred?.BaseUrl)
+            ? new Uri("v1/messages", UriKind.Relative)
+            : new Uri(new Uri(cred!.BaseUrl!.TrimEnd('/') + "/"), "v1/messages");
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, requestUri) { Content = JsonContent.Create(body) };
+        // BYOK → override x-api-key with the client's key. anthropic-version stays the named client's default.
+        if (cred is not null)
+            httpRequest.Headers.TryAddWithoutValidation("x-api-key", cred.ApiKey);
+
+        var response = await client.SendAsync(httpRequest, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var doc = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);

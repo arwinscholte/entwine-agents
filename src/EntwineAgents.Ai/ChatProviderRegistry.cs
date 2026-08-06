@@ -10,12 +10,13 @@ public sealed class ChatProviderRegistry : IChatProviderRegistry
     private readonly Dictionary<string, IChatProvider> _byKey;
     private readonly IChatProvider _default;
 
-    public ChatProviderRegistry(OpenAiCompatibleChatProvider openAi, AnthropicChatProvider anthropic)
+    public ChatProviderRegistry(OpenAiCompatibleChatProvider openAi, AnthropicChatProvider anthropic, AzureOpenAiChatProvider azureOpenAi)
     {
         _byKey = new Dictionary<string, IChatProvider>(StringComparer.OrdinalIgnoreCase)
         {
             [OpenAiCompatibleChatProvider.ProviderKey] = openAi,
             [AnthropicChatProvider.ProviderKey] = anthropic,
+            [AzureOpenAiChatProvider.ProviderKey] = azureOpenAi,   // ENT-352: per-client Azure OpenAI
         };
         _default = openAi;
     }
