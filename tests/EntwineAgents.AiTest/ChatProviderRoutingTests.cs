@@ -13,13 +13,16 @@ public class ChatProviderRoutingTests
     private static AnthropicChatProvider BuildAnthropic()
         => new(Mock.Of<IHttpClientFactory>(), Options.Create(new AnthropicOptions()));
 
+    private static AzureOpenAiChatProvider BuildAzure()
+        => new(Mock.Of<IHttpClientFactory>());
+
     // ── Registry ──────────────────────────────────────────────────────────
 
     [Fact]
     public void Resolve_NullKey_ReturnsDefaultOpenAi()
     {
         var openAi = BuildOpenAi();
-        var registry = new ChatProviderRegistry(openAi, BuildAnthropic());
+        var registry = new ChatProviderRegistry(openAi, BuildAnthropic(), BuildAzure());
 
         Assert.Same(openAi, registry.Resolve(null));
         Assert.Same(openAi, registry.Resolve("   "));
@@ -30,7 +33,7 @@ public class ChatProviderRoutingTests
     {
         var openAi = BuildOpenAi();
         var anthropic = BuildAnthropic();
-        var registry = new ChatProviderRegistry(openAi, anthropic);
+        var registry = new ChatProviderRegistry(openAi, anthropic, BuildAzure());
 
         Assert.Same(openAi, registry.Resolve(OpenAiCompatibleChatProvider.ProviderKey));
         Assert.Same(anthropic, registry.Resolve(AnthropicChatProvider.ProviderKey));
@@ -40,7 +43,7 @@ public class ChatProviderRoutingTests
     public void Resolve_IsCaseInsensitive()
     {
         var anthropic = BuildAnthropic();
-        var registry = new ChatProviderRegistry(BuildOpenAi(), anthropic);
+        var registry = new ChatProviderRegistry(BuildOpenAi(), anthropic, BuildAzure());
 
         Assert.Same(anthropic, registry.Resolve("ANTHROPIC"));
     }
@@ -49,7 +52,7 @@ public class ChatProviderRoutingTests
     public void Resolve_UnknownKey_FallsBackToDefault()
     {
         var openAi = BuildOpenAi();
-        var registry = new ChatProviderRegistry(openAi, BuildAnthropic());
+        var registry = new ChatProviderRegistry(openAi, BuildAnthropic(), BuildAzure());
 
         Assert.Same(openAi, registry.Resolve("does-not-exist"));
     }
