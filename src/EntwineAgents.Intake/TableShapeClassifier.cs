@@ -47,6 +47,13 @@ public sealed record ColumnMap(TargetSchema Schema, IReadOnlyList<ColumnMapping>
 
     public bool Complete => MissingRequired.Count == 0;
 
+    /// <summary>Every required column is named by a header (exact, synonym, containment or the model) — not
+    /// inferred from its values alone. A required column read only from value shape is a weaker claim, and a
+    /// schema that needs it ranks below one whose headers say what they are.</summary>
+    public bool RequiredBoundByHeader =>
+        Schema.Columns.Where(c => c.Required).All(c =>
+            Mappings.Any(m => string.Equals(m.Column, c.Name, StringComparison.OrdinalIgnoreCase) && m.Basis != "shape"));
+
     /// <summary>The table re-headed with the canonical names for every bound column; unbound headers keep their own
     /// name. Consumers that read by canonical header then work unchanged.</summary>
     public RecordTableReader.Table Project(RecordTableReader.Table table)
@@ -118,9 +125,12 @@ public sealed class TableShapeClassifier
     /// <summary>Deterministic reading only — never calls a model.</summary>
     public ShapeResult Classify(RecordTableReader.Table table)
     {
-        var candidates = _schemas.Select(s => Score(s, table)).OrderByDescending(c => c.Score).ToList();
-        var best = candidates.FirstOrDefault(c => c.Complete && c.Score >= _options.MinScore);
-        var tie = best is not null && candidates.Count(c => c.Complete && c.Score >= best.Score - _options.TieMargin) > 1;
+        // Ranked: headers that say what they are beat a required column guessed from its values; then score.
+        var candidates = _schemas.Select(s => Score(s, table))
+            .OrderByDescending(c => c.Complete && c.RequiredBoundByHeader).ThenByDescending(c => c.Score).ToList();
+        var fits = candidates.Where(c => c.Complete && c.Score >= _options.MinScore).ToList();
+        var best = fits.FirstOrDefault();
+        var tie = best is not null && fits.Count(c => c.RequiredBoundByHeader == best.RequiredBoundByHeader && c.Score >= best.Score - _options.TieMargin) > 1;
         return new ShapeResult(tie ? null : best, candidates, UsedModel: false,
             best is null ? "No schema fits the headers." : tie ? "Two schemas fit equally well." : null);
     }

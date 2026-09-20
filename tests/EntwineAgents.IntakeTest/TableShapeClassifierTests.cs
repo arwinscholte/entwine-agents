@@ -99,6 +99,27 @@ public class TableShapeClassifierTests
     }
 
     [Fact]
+    public void A_required_column_named_by_a_header_beats_one_guessed_from_its_values()
+    {
+        // "Support" and "Training" look like need areas, so a Needs-style schema can complete on value shape alone —
+        // but the Engagements headers say what they are, and that reading wins.
+        static bool LooksLikeArea(IReadOnlyList<string> v) => v.Count > 0 && v.All(x => x is "Support" or "Training" or "Integration");
+        var needs = new TargetSchema("Needs", new[]
+        {
+            SchemaColumn.Of("Customer", required: true, "Account"),
+            new SchemaColumn("Need area", new[] { "Area" }, Required: true, ValueShape: LooksLikeArea),
+            new SchemaColumn("Met by", new[] { "Partner" }),
+        });
+        var sut = new TableShapeClassifier(new[] { Engagements, needs });
+
+        var r = sut.Classify(Table("Partner,Customer,Engagement\nApex,Acme,Support\nApex,Globex,Training"));
+
+        r.Best!.Schema.Name.Should().Be("Engagements");
+        r.Candidates.Single(c => c.Schema.Name == "Needs").Complete.Should().BeTrue("it completes on value shape");
+        r.Candidates.Single(c => c.Schema.Name == "Needs").RequiredBoundByHeader.Should().BeFalse();
+    }
+
+    [Fact]
     public void Nothing_fits_is_unknown_not_a_guess()
     {
         var r = Sut().Classify(Table("Variable,Value,Unit\nN_CUSTOMERS,200,customers"));
