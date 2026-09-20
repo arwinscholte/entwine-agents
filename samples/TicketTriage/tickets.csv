@@ -1,0 +1,15 @@
+Who,What they wrote,Logged,Plan
+Acme Corp,"Payroll run failed again this morning, third time this month. We have 240 staff waiting on payslips and finance is asking me why we moved to you.",2026-09-14,Enterprise
+Globex Ltd,"Could you add a dark mode to the mobile app? Not urgent, a few of our drivers asked.",2026-09-15,Growth
+Initech,"Our SSO login stopped working after your Tuesday release. Nobody in the Berlin office can get in.",2026-09-16,Enterprise
+Hooli,"Invoice 4471 shows the old price. We agreed the discount in July with Priya from your team.",2026-09-16,Growth
+Vandelay Industries,"Loving the new reporting. One thing: the export drops the currency column when there is more than one currency.",2026-09-17,Growth
+Stark Industries,"We are considering cancelling. The integration with our ERP has been in beta for eight months and our CFO has lost patience.",2026-09-17,Enterprise
+Wonka Industries,"How do I add a second admin user? I could not find it in the settings.",2026-09-18,Starter
+Umbrella Corp,"Data export request under GDPR for one of our former employees, reference in the attached letter.",2026-09-18,Enterprise
+Pied Piper,"The API rate limit is too low for our nightly sync, we are getting 429s from 2am.",2026-09-19,Growth
+Dunder Mifflin,"Thanks for the quick fix last week, all good now.",2026-09-19,Starter
+Cyberdyne Systems,"Security questionnaire from our compliance team, 60 questions, due Friday.",2026-09-19,Enterprise
+Bluth Company,"Renewal is next month and I want to talk about moving from Growth to Enterprise for the audit trail feature.",2026-09-20,Growth
+Gekko & Co,"Your status page said all systems operational while we could not log in for two hours.",2026-09-20,Growth
+Oscorp,"Can we get the webhook payload to include the customer reference? Our integration needs it.",2026-09-20,Growth
