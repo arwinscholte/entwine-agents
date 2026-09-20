@@ -247,14 +247,17 @@ public sealed class TableShapeClassifier
 
     // ── the residue call ──────────────────────────────────────────────────────────────────────────────────────
 
-    /// <summary>The prompt the residue call sees: the schemas, the headers, a few scrubbed rows, and the exact JSON asked for.</summary>
+    /// <summary>The prompt the residue call sees: the schemas, the headers, one profile line per column (its kind,
+    /// how many distinct values, a couple of scrubbed examples), and the exact JSON asked for. Profiles rather than
+    /// raw rows: a small model reads "dates" and "text, 40 distinct values" better than a grid of tokens, and the
+    /// scrub can be as thorough as the caller likes without losing the shape.</summary>
     public string BuildPrompt(RecordTableReader.Table table, Func<string, string>? scrub)
     {
         scrub ??= s => s;
         var sb = new StringBuilder();
         sb.AppendLine("A table was uploaded. Decide which ONE of these schemas it is, and which of its headers holds each schema column.");
         sb.AppendLine("Answer ONLY with JSON of the form {\"schema\": \"<schema name>\", \"columns\": {\"<schema column>\": \"<table header>\"}}.");
-        sb.AppendLine("Use header names exactly as listed. Leave out any schema column the table does not have. If no schema fits, answer {\"schema\": null}.");
+        sb.AppendLine("Use header names exactly as listed. Leave out any schema column the table does not have.");
         sb.AppendLine();
         sb.AppendLine("Schemas:");
         foreach (var s in _schemas)
@@ -267,10 +270,26 @@ public sealed class TableShapeClassifier
         }
         sb.AppendLine();
         sb.AppendLine("Table headers: " + string.Join(" | ", table.Headers));
-        sb.AppendLine("Sample rows:");
-        foreach (var row in table.Rows.Take(_options.SampleRows))
-            sb.AppendLine("  " + string.Join(" | ", row.Select(v => scrub(v))));
+        sb.AppendLine("Column profiles (identities may be replaced by tokens; a token is a value, never a header):");
+        foreach (var header in table.Headers.Where(h => Norm(h).Length > 0))
+            sb.Append("  ").Append(header).Append(": ").AppendLine(Profile(table, header, scrub));
+        sb.AppendLine("Bind a schema column only to a header listed above. Answer {\"schema\": null} only when no schema's required columns can all be found.");
         return sb.ToString();
+    }
+
+    private string Profile(RecordTableReader.Table table, string header, Func<string, string> scrub)
+    {
+        var values = Sample(table, header);
+        var rows = Math.Min(table.Rows.Count, _options.ShapeSample);
+        if (values.Count == 0) return "empty";
+        var distinct = values.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var kind =
+            values.Count(v => DateTime.TryParse(v, out _)) * 2 >= values.Count ? "dates" :
+            values.All(v => decimal.TryParse(v.TrimEnd('%'), out _)) ? "numbers" :
+            values.All(v => v.Trim().ToLowerInvariant() is "yes" or "no" or "y" or "n" or "true" or "false") ? "yes/no" :
+            "text";
+        var examples = string.Join(", ", distinct.Take(2).Select(v => scrub(v.Length > 40 ? v[..40] + "…" : v)));
+        return kind is "dates" or "numbers" ? $"{kind}, e.g. {examples}" : $"{kind}, {distinct.Count} distinct value{(distinct.Count == 1 ? "" : "s")} in {rows} rows, e.g. {examples}";
     }
 
     /// <summary>Validates the model's answer: the schema must be one of ours, every column one of that schema's, every
