@@ -3,22 +3,20 @@
 [![CI](https://github.com/arwinscholte/entwine-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/arwinscholte/entwine-agents/actions/workflows/ci.yml)
 [![NuGet](https://img.shields.io/nuget/v/EntwineAgents.Runtime?label=nuget)](https://www.nuget.org/packages/EntwineAgents.Runtime)
 
-A lean, composable **agent runtime for .NET** — the shared substrate for building LLM agents that behave like
-software components: typed inputs and outputs, prompts managed as data, privacy by construction, and graceful
-degradation everywhere.
+A small agent runtime for .NET. You write four overrides — the prompt, how to shape the input, how to parse the
+output, what to return when the model fails — and the runtime runs the loop: fetch the prompt, call the model,
+parse, or fall back to your typed default. No exceptions leak out of a failed call, no customer name reaches the
+model unless you put it there, and a prompt-service outage cannot take an agent down.
 
-Extracted from a production system where the same agent loop had been hand-rolled fifteen times across three
-products. The loop lives here once; what varies stays yours.
+It came out of a product where the same loop had been copied into fifteen agents across three services. The loop
+is here once. Your prompts, inputs and outputs stay in your code.
 
-## The idea
-
-> **An agent = a prompt (loaded by key, host-overridable) + input shaping + typed parsing + graceful degrade**,
-> riding a shell that owns the loop.
+## What an agent looks like
 
 ```csharp
 sealed class TaglineAgent(IAgentChat chat, IPromptSource? prompts = null) : Agent<string, string>(chat, prompts)
 {
-    protected override string Key => "quickstart.tagline.system";   // hosts can override by key
+    protected override string Key => "quickstart.tagline.system";   // hosts can override the prompt by key
     protected override string FallbackPrompt =>
         "You write one short, punchy product tagline. Reply with the tagline only.";
     protected override bool Json => false;
@@ -28,48 +26,51 @@ sealed class TaglineAgent(IAgentChat chat, IPromptSource? prompts = null) : Agen
 }
 ```
 
-Four overrides carry everything that is domain-specific. The shell owns the loop: fetch the prompt by key
-(falling back to the built-in), run one turn, degrade to a **typed** failure value if the model or network
-fails, parse to a **typed** result. There is also a batched sibling, `BatchAgent<TItem, TResult>`, for
-classify-many-items work: chunking, per-batch retry, position-aligned parsing, and per-item degrade.
+`Agent<TInput, TResult>` runs one turn. `BatchAgent<TItem, TResult>` classifies many items: it chunks them, retries a
+batch the model mangles, aligns the output to the input by position, and degrades per item rather than dropping the
+batch.
 
 Run it:
 
-```bash
+```
 set OPENAI_API_KEY=sk-...        # any OpenAI-compatible endpoint; OPENAI_BASE_URL / OPENAI_MODEL to override
 dotnet run --project samples/QuickStart -- "a keyboard for cats"
 ```
 
 ## Packages
 
-| Package | What it gives you |
+| Package | What it does |
 |---|---|
-| **EntwineAgents.Ai** | The provider seam: `IChatProvider` + `ChatRequest`, OpenAI-compatible and Anthropic-native providers, a routing registry (`ChatRequest.ProviderKey`), typed options. |
-| **EntwineAgents.Runtime** | The agent shells (`Agent<TInput,TResult>`, `BatchAgent<TItem,TResult>`), the ports agents consume (`IAgentChat`, `IPromptSource`), JSON un-fencing, and the bridge between the provider and agent seams. |
-| **EntwineAgents.Prompts** | Prompt management: versioned templates, per-client override, cached client→global fallback reads. Persistence is a port (`IPromptRepository`); post-save behaviour is a port (`IPromptSavedHook`); `HttpPromptSource` binds database-free hosts over a prompt-egress endpoint — failing open to built-in fallbacks. |
-| **EntwineAgents.Intake** | Turn messy sources into clean tables: XLSX/CSV/OCR-text reading with tolerant header detection, date normalisation, and `PseudonymMap` — typed, stable, session-local pseudonymisation so identities never reach a model. |
-| **EntwineAgents.Ocr** | Document OCR behind a port: `IDocumentOcr` with an Azure Document Intelligence implementation — structured text (paragraphs, tables as markdown, low-confidence word handling) plus per-page spatial data. |
-| **EntwineAgents.Tokenisation** | Tokenisation at rest (pseudonymisation with a separated key, GDPR Art. 4(5)): deterministic cross-run-stable tokens; real values live only as AES-GCM ciphertext in a tenant-scoped key store. |
+| **EntwineAgents.Runtime** | The agent shells above, the two interfaces they need (`IAgentChat`, `IPromptSource`), and JSON un-fencing for models that wrap their answer in prose. Start here. |
+| **EntwineAgents.Ai** | `IChatProvider` + `ChatRequest`: OpenAI-compatible and Anthropic-native providers, a registry that routes by `ChatRequest.ProviderKey`, per-client credentials. Runtime depends on it. |
+| **EntwineAgents.Prompts** | Prompts stored as data: versioned templates, a per-client override, cached reads. Storage is an interface. `HttpPromptSource` lets a host with no database load prompts from an endpoint and fall back to the compiled defaults when it is down. |
+| **EntwineAgents.Intake** | Messy files into clean tables: XLSX, CSV and OCR text with tolerant header detection; date normalisation; `TableShapeClassifier`, which reads a table for what it is (which of your schemas, which column is which); `PseudonymMap`, which swaps identities for stable session-local tokens before text reaches a model. |
+| **EntwineAgents.Ocr** | `IDocumentOcr` with an Azure Document Intelligence implementation: paragraphs, tables as markdown, low-confidence words flagged, per-page positions. |
+| **EntwineAgents.Tokenisation** | Tokenisation at rest: deterministic tokens that are stable across runs, with the real values held only as AES-GCM ciphertext in a key store scoped to the tenant (GDPR Art. 4(5) pseudonymisation with a separated key). |
 
-Each package stands alone; take what you need. `Runtime` depends on `Ai`; `Prompts` depends on `Runtime`;
-everything else is independent.
+Take the packages you need. Runtime needs Ai; Prompts needs Runtime; the rest stand alone.
 
-## Design principles
+## How it is built
 
-- **Two seams, bridged once.** `IChatProvider` is the SPI providers implement; `IAgentChat` is the API agents
-  consume; `ChatProviderAgentChat` connects them. Your agents never know which model or vendor is behind them.
-- **Agents propose; algorithms compute; humans decide.** The shells make agent output typed and validated so
-  deterministic code — and people — can act on it. Nothing here auto-persists a model's opinion.
-- **Prompts are data.** Loaded by key with a compiled fallback, so prompts can be versioned, per-client
-  overridden, and served remotely — and a prompt-service outage can never take an agent down.
-- **Fail open, degrade typed.** A failed call returns your `OnFailure` value, not an exception across your
-  pipeline; a batch the model mangles degrades per-item, never by discarding the batch.
-- **Privacy by construction.** Session-local pseudonyms for what reaches a model; separated-key tokenisation
-  for what reaches a database.
+**A model failure returns a value, not an exception.** `OnFailure` is typed like the result. A network error, a
+timeout or a mangled answer gives your pipeline that value and carries on; a batch degrades one item at a time.
+
+**Prompts load by key, with a compiled fallback.** The host can version a prompt, override it per client or serve it
+from a remote endpoint, and if that endpoint is unreachable the agent uses the prompt compiled into it.
+
+**Agents never see the vendor.** Agents call `IAgentChat`; providers implement `IChatProvider`;
+`ChatProviderAgentChat` joins the two. Swap OpenAI for Anthropic, or route by request, without touching an agent.
+
+**Identities stay out of the model and out of the database.** `PseudonymMap` replaces names with tokens for the
+length of a session; the Tokenisation package keeps stored tokens stable across runs while the real values live
+encrypted under a separate key.
+
+**The model's output is typed before anything acts on it.** Deterministic code and people decide what to do with an
+agent's answer; nothing in these packages writes a model's opinion anywhere on its own.
 
 ## Building
 
-```bash
+```
 dotnet build entwine-agents.slnx
 dotnet test  entwine-agents.slnx
 ```
