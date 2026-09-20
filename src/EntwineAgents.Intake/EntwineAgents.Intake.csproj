@@ -5,8 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>EntwineAgents.Intake</RootNamespace>
-    <Description>Intake utilities for .NET agents: tolerant XLSX/CSV/OCR-text table reading, date normalisation, and session-local pseudonymisation (PseudonymMap).</Description>
-    <PackageTags>csv;xlsx;ocr;etl;pseudonymization;llm;dotnet</PackageTags>
+    <Description>Intake utilities for .NET agents: tolerant XLSX/CSV/OCR-text table reading, a table-shape classifier (which schema is this, which column is which — deterministic first, a validated model residue second), date normalisation, and session-local pseudonymisation (PseudonymMap).</Description>
+    <PackageTags>csv;xlsx;ocr;etl;schema-mapping;pseudonymization;llm;dotnet</PackageTags>
   </PropertyGroup>
 
   <!--
