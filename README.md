@@ -37,6 +37,19 @@ set OPENAI_API_KEY=sk-...        # any OpenAI-compatible endpoint; OPENAI_BASE_U
 dotnet run --project samples/QuickStart -- "a keyboard for cats"
 ```
 
+## A sample that does something
+
+`samples/TicketTriage` takes a support-ticket export whose columns are named someone else's way, works out which
+column is which, swaps every customer name for a token before the model sees a word, classifies the tickets in
+batches into a typed `Triage` per row (category, urgency, next action), puts the names back and prints the table
+with the three tickets to look at first. Then run it again with no API key: every row comes back `Unclassified`,
+nothing is dropped, and the process still exits 0 — that second run is the whole point of the runtime.
+
+```
+dotnet run --project samples/TicketTriage                 # the tickets.csv beside it
+dotnet run --project samples/TicketTriage -- yours.csv    # or your own export
+```
+
 ## Packages
 
 | Package | What it does |

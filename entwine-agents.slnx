@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/samples/">
     <Project Path="samples/QuickStart/QuickStart.csproj" />
+    <Project Path="samples/TicketTriage/TicketTriage.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/EntwineAgents.Ai/EntwineAgents.Ai.csproj" />
