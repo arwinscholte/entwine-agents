@@ -140,7 +140,7 @@ public class TableShapeClassifierTests
         var r = await Sut().ClassifyAsync(Table("Firm,Logo,What we did\nApex,Acme Corp,Onboarding"), residue, scrub: s => s.Replace("Acme Corp", "ACCOUNT_01"));
 
         calls.Should().Be(1);
-        seen.Should().Contain("ACCOUNT_01").And.NotContain("Acme Corp", "sample rows are scrubbed before the prompt");
+        seen.Should().Contain("ACCOUNT_01").And.NotContain("Acme Corp", "example values are scrubbed before the prompt");
         r.UsedModel.Should().BeTrue();
         r.Best!.Schema.Name.Should().Be("Engagements");
         r.Best.HeaderFor("Partner").Should().Be("Firm");
@@ -186,6 +186,9 @@ public class TableShapeClassifierTests
         prompt.Should().Contain("- Engagements: one row per piece of partner work")
             .And.Contain("Partner (required) — also called Partner name, Reseller, Vendor partner")
             .And.Contain("Table headers: Firm | Logo")
+            .And.Contain("Firm: text, 1 distinct value in 1 rows, e.g. Apex")
             .And.Contain("{\"schema\": \"<schema name>\", \"columns\"");
+        var dated = Sut().BuildPrompt(Table("When,Score,Ok\n2025-01-01,7,Yes\n2025-02-01,9,No"), null);
+        dated.Should().Contain("When: dates, e.g. 2025-01-01").And.Contain("Score: numbers, e.g. 7, 9").And.Contain("Ok: yes/no, 2 distinct values in 2 rows");
     }
 }
