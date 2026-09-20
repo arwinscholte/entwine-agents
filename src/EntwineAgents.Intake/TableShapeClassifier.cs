@@ -98,6 +98,9 @@ public sealed record TableShapeOptions
     public int ShapeSample { get; init; } = 25;
     /// <summary>Confidence given to a binding the model supplied.</summary>
     public double ModelConfidence { get; init; } = 0.6;
+    /// <summary>A model reading passes at this fraction of <see cref="MinScore"/>: its bindings are worth less each, and
+    /// a schema with many optional columns would otherwise never be reachable through the model at all.</summary>
+    public double ModelMinScoreFactor { get; init; } = 0.75;
 }
 
 /// <summary>
@@ -153,17 +156,28 @@ public sealed class TableShapeClassifier
         var deterministic = first.Candidates.First(c => ReferenceEquals(c.Schema, schema));
         var mappings = deterministic.Mappings.ToList();
         var usedHeaders = new HashSet<string>(mappings.Select(m => Norm(m.Header)));
+        var contradicted = new List<string>();
         foreach (var (column, header) in bindings)
         {
             if (mappings.Any(m => string.Equals(m.Column, column, StringComparison.OrdinalIgnoreCase)) || usedHeaders.Contains(Norm(header))) continue;
-            mappings.Add(new ColumnMapping(schema.Column(column)!.Name, header, _options.ModelConfidence, "model"));
+            var schemaColumn = schema.Column(column)!;
+            // A column whose values are known to look a certain way, bound to a header whose values do not: the
+            // model is wrong about that one, and the binding is dropped rather than trusted.
+            if (schemaColumn.ValueShape is { } shape && !shape(Sample(table, header)) && Sample(table, header).Count > 0)
+            {
+                contradicted.Add($"{column} = {header}");
+                continue;
+            }
+            mappings.Add(new ColumnMapping(schemaColumn.Name, header, _options.ModelConfidence, "model"));
             usedHeaders.Add(Norm(header));
         }
         var merged = new ColumnMap(schema, mappings, ScoreOf(schema, mappings));
         var candidates = first.Candidates.Select(c => ReferenceEquals(c.Schema, schema) ? merged : c).OrderByDescending(c => c.Score).ToList();
-        var ok = merged.Complete && merged.Score >= _options.MinScore;
+        var ok = merged.Complete && merged.Score >= _options.MinScore * _options.ModelMinScoreFactor;
+        var why = !merged.Complete ? $"{string.Join(", ", merged.MissingRequired)} could not be bound"
+            : $"too little of it was bound ({merged.Mappings.Count} of {schema.Columns.Count} columns)";
         return new ShapeResult(ok ? merged : null, candidates, UsedModel: true,
-            ok ? null : $"The model read it as {schema.Name} but {string.Join(", ", merged.MissingRequired)} could not be bound.");
+            ok ? null : $"The model read it as {schema.Name} but {why}" + (contradicted.Count > 0 ? $"; dropped as contradicting the values: {string.Join(", ", contradicted)}" : "") + ".");
     }
 
     // ── deterministic scoring ─────────────────────────────────────────────────────────────────────────────────

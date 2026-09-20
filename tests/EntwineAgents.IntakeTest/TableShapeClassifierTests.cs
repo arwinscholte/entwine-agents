@@ -163,6 +163,34 @@ public class TableShapeClassifierTests
     }
 
     [Fact]
+    public async Task A_model_binding_that_contradicts_the_values_is_dropped_and_a_thin_reading_is_refused()
+    {
+        // Outcomes' Status looks like a status; CSAT like a 0-10 rating. The model binds a numbers column to Status: dropped.
+        // What is left (Customer only) is too thin to be Outcomes, so the table stays unknown.
+        ShapeResidueCall residue = (_, _) => Task.FromResult<string?>("{\"schema\":\"Outcomes\",\"columns\":{\"Customer\":\"Variable\",\"Status\":\"Value\"}}");
+        var outcomes = new TargetSchema("Outcomes", new[]
+        {
+            SchemaColumn.Of("Customer", required: true, "Account"),
+            new SchemaColumn("Status", new[] { "Lifecycle" }, ValueShape: v => v.All(x => x is "Healthy" or "At risk" or "Churned")),
+            new SchemaColumn("CSAT", new[] { "NPS" }, ValueShape: LooksLikeRating),
+            SchemaColumn.Of("Health", required: false, "RAG"),
+            SchemaColumn.Of("Reference", required: false, "Advocate"),
+        });
+        var sut = new TableShapeClassifier(new[] { Engagements, outcomes });
+
+        var r = await sut.ClassifyAsync(Table("Variable,Value,Unit\nN_CUSTOMERS,200,customers\nACV,30000,$/yr"), residue);
+
+        r.IsUnknown.Should().BeTrue();
+        r.Note.Should().Contain("too little of it was bound").And.Contain("Status = Value");
+
+        // The same schema, a real health export: Customer + a status the values confirm + a health column pass at the model's gate.
+        ShapeResidueCall healthy = (_, _) => Task.FromResult<string?>("{\"schema\":\"Outcomes\",\"columns\":{\"Customer\":\"Acct\",\"Status\":\"State\",\"Health\":\"Q3 RAG\"}}");
+        var ok = await sut.ClassifyAsync(Table("Acct,State,Q3 RAG\nAcme,Healthy,Green\nGlobex,Churned,Red"), healthy);
+        ok.Best!.Schema.Name.Should().Be("Outcomes");
+        ok.Best.Mappings.Should().HaveCount(3);
+    }
+
+    [Fact]
     public async Task A_tie_goes_to_the_model_and_a_clear_reading_never_does()
     {
         // Partner + Customer only: Engagements, Sourcing and Outcomes all bind what they can; none is complete → unknown, so the model is asked.
