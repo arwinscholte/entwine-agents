@@ -14,7 +14,8 @@ public sealed record ChatRequest(
     bool JsonResponse = false,
     int? MaxTokens = null,          // null → omit (provider/model default)
     string? ProviderKey = null,    // null → default (OpenAI-compatible) provider
-    int? ClientId = null);         // ENT-352: resolves this client's BYOK credential (null → platform key)
+    int? ClientId = null,          // ENT-352: resolves this client's BYOK credential (null → platform key)
+    string? ReasoningEffort = null); // reasoning models only: none / low / medium / high / xhigh / max (null → provider option, else model default)
 
 /// <summary>
 /// Abstraction over a chat-completion provider. Extracting this from the ~10 inline

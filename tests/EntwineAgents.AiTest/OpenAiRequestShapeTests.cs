@@ -59,6 +59,20 @@ public class OpenAiRequestShapeTests
         Assert.Empty(body);
     }
 
+    [Theory]
+    [InlineData("gpt-5.6-luna", "none", "none")]
+    [InlineData("gpt-5.6-luna", " Low ", "low")]
+    [InlineData("gpt-5.6-luna", null, null)]
+    [InlineData("gpt-5.6-luna", "", null)]
+    [InlineData("gpt-4.1-nano", "none", null)]   // older models never get it
+    public void Reasoning_effort_is_sent_only_to_reasoning_models_and_only_when_set(string model, string? effort, string? expected)
+    {
+        var body = new Dictionary<string, object>();
+        OpenAiRequestShape.ApplySampling(body, model, 0.0, 100, effort);
+        if (expected is null) Assert.False(body.ContainsKey("reasoning_effort"));
+        else Assert.Equal(expected, body["reasoning_effort"]);
+    }
+
     private sealed class RecordingHandler : HttpMessageHandler
     {
         public string? RequestBody;
@@ -67,6 +81,29 @@ public class OpenAiRequestShapeTests
             RequestBody = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"choices\":[{\"message\":{\"content\":\"{}\"}}]}") };
         }
+    }
+
+    private static (OpenAiCompatibleChatProvider Provider, RecordingHandler Handler) Luna(string? optionEffort)
+    {
+        var handler = new RecordingHandler();
+        var factory = new Mock<IHttpClientFactory>();
+        factory.Setup(f => f.CreateClient("LLM")).Returns(() => new HttpClient(handler) { BaseAddress = new Uri("https://localhost/v1/") });
+        return (new OpenAiCompatibleChatProvider(factory.Object, Options.Create(new LlmOptions { ModelId = "gpt-5.6-luna", ReasoningEffort = optionEffort })), handler);
+    }
+
+    [Fact]
+    public async Task The_option_sets_reasoning_effort_and_a_request_overrides_it()
+    {
+        var (provider, handler) = Luna("none");
+        await provider.CompleteAsync(new ChatRequest("u"));
+        Assert.Equal("none", JsonDocument.Parse(handler.RequestBody!).RootElement.GetProperty("reasoning_effort").GetString());
+
+        await provider.CompleteAsync(new ChatRequest("u", ReasoningEffort: "high"));
+        Assert.Equal("high", JsonDocument.Parse(handler.RequestBody!).RootElement.GetProperty("reasoning_effort").GetString());
+
+        var (plain, plainHandler) = Luna(null);
+        await plain.CompleteAsync(new ChatRequest("u"));
+        Assert.False(JsonDocument.Parse(plainHandler.RequestBody!).RootElement.TryGetProperty("reasoning_effort", out _), "no option, no request value: the model's default");
     }
 
     [Fact]

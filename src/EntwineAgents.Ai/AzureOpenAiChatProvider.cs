@@ -55,7 +55,7 @@ public sealed class AzureOpenAiChatProvider : IChatProvider
         };
         // A deployment named after a reasoning model (gpt-5, o-series, luna) takes max_completion_tokens and only
         // the default temperature; a deployment name that hides the model keeps the older shape.
-        OpenAiRequestShape.ApplySampling(body, deployment, request.Temperature, request.MaxTokens);
+        OpenAiRequestShape.ApplySampling(body, deployment, request.Temperature, request.MaxTokens, request.ReasoningEffort);
         if (request.JsonResponse)
             body["response_format"] = new { type = "json_object" };
 

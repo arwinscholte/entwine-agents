@@ -19,6 +19,12 @@ public class LlmOptions
     /// Set to null or empty to skip the vision pass entirely.
     /// </summary>
     public string? VisionModelId { get; set; } = "gpt-4o";
+    /// <summary>
+    /// reasoning_effort for reasoning models (gpt-5 / o-series / luna): none, low, medium, high, xhigh or max.
+    /// Null or empty sends nothing (the model's default, medium for gpt-5.6-luna). Ignored for older models.
+    /// A <see cref="ChatRequest.ReasoningEffort"/> on the call wins over this.
+    /// </summary>
+    public string? ReasoningEffort { get; set; }
     /// <summary>HTTP header name for authentication. Default: Authorization</summary>
     public string ApiKeyHeader { get; set; } = "Authorization";
     /// <summary>Prefix prepended to ApiKey in the header. Default: "Bearer " (with trailing space)</summary>
