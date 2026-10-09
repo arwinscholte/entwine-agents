@@ -52,12 +52,12 @@ public sealed class AzureOpenAiChatProvider : IChatProvider
         var body = new Dictionary<string, object>
         {
             ["messages"] = messages,
-            ["temperature"] = request.Temperature,
         };
+        // A deployment named after a reasoning model (gpt-5, o-series, luna) takes max_completion_tokens and only
+        // the default temperature; a deployment name that hides the model keeps the older shape.
+        OpenAiRequestShape.ApplySampling(body, deployment, request.Temperature, request.MaxTokens);
         if (request.JsonResponse)
             body["response_format"] = new { type = "json_object" };
-        if (request.MaxTokens is int maxTokens)
-            body["max_tokens"] = maxTokens;
 
         var uri = new Uri(new Uri(cred.BaseUrl!.TrimEnd('/') + "/"),
             $"openai/deployments/{deployment}/chat/completions?api-version={ApiVersion}");
