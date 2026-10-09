@@ -51,7 +51,7 @@ public sealed class OpenAiCompatibleChatProvider : IChatProvider
             ["messages"] = messages,
         };
         // gpt-5 / o-series / luna models take max_completion_tokens and only the default temperature.
-        OpenAiRequestShape.ApplySampling(body, model, request.Temperature, request.MaxTokens);
+        OpenAiRequestShape.ApplySampling(body, model, request.Temperature, request.MaxTokens, request.ReasoningEffort ?? _options.ReasoningEffort);
         if (request.JsonResponse)
             body["response_format"] = new { type = "json_object" };
 

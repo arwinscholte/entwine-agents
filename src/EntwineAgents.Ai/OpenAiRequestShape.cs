@@ -29,10 +29,18 @@ public static class OpenAiRequestShape
     /// (their only accepted temperature is the default). A null <paramref name="maxTokens"/> adds no limit.
     /// </summary>
     public static void ApplySampling(IDictionary<string, object> body, string? model, double temperature, int? maxTokens)
+        => ApplySampling(body, model, temperature, maxTokens, reasoningEffort: null);
+
+    /// <summary>
+    /// As above, plus <c>reasoning_effort</c> for reasoning models when <paramref name="reasoningEffort"/> is set
+    /// (none, low, medium, high, xhigh, max). Older models never get it.
+    /// </summary>
+    public static void ApplySampling(IDictionary<string, object> body, string? model, double temperature, int? maxTokens, string? reasoningEffort)
     {
         if (IsReasoningModel(model))
         {
             if (maxTokens is int limit) body["max_completion_tokens"] = limit;
+            if (!string.IsNullOrWhiteSpace(reasoningEffort)) body["reasoning_effort"] = reasoningEffort.Trim().ToLowerInvariant();
             return;
         }
         body["temperature"] = temperature;
